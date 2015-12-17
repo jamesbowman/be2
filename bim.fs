@@ -148,13 +148,19 @@ variable FR
 cold
 e short
 
-: bars
-    6 0 do
-        cr
-        6 0 do
-            j 6 * i + 16 + dup fg
-            dup 4 u.r
-        loop
-    loop
+: show
+    dup fg
+    4 u.r
 ;
 
+: bars
+    cr 16 0 do i show loop
+
+    216 0 do
+        i 36 mod 0= if cr then
+        i 6 mod 0= if cr then
+        i 16 + show
+    loop
+
+    cr 256 232 do i show loop
+;
