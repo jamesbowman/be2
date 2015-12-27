@@ -1,1 +1,1 @@
-gforth bim.fs
+gforth te.fs -e bye
