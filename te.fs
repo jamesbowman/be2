@@ -35,7 +35,6 @@ w columns / constant qw
 
 : redraw
     utime
-    page
     nl 0 do
         i h / qw * i h mod at-xy
         i lnum = if 100 else 18 then fg 
@@ -51,7 +50,7 @@ w columns / constant qw
 : down  1 max lnum + go ; 
 
 : visual
-    0
+    page 0
     begin
         redraw
         ekey ekey>char if ( c )
