@@ -1,7 +1,9 @@
-4 constant columns
+4   constant columns
+64  constant LW
 
-create ff       256 64 * allot 
-: line  ( n -- a u )    64 * ff + 64 ;
+create ff       256 LW * allot 
+: line  ( n -- a u )    LW * ff + ;
+
 create linebuf  65 allot
 
 : n. ( n -- )   base @ swap decimal 0 u.r base ! ;
@@ -9,23 +11,22 @@ create linebuf  65 allot
 : normal        csi ." 0m" ;
 : fg            csi ." 38;5;" n. ." m" ;
 : bg            csi ." 48;5;" n. ." m" ;
+: hide          csi ." ?25l" ;
+: cursor        csi ." ?25h" ;
 
 form constant w 1- constant h
 w columns / constant qw
-0 value nl  0 value lnum
+0 value nl  0 value lnum 0 value cnum
 : ml ( -- maxline ) nl 1- ;
 
 : ld  ( filename -- )
-    ff 256 64 * blank
+    ff 256 LW * blank
     r/o open-file throw >r
     0
     begin
-        linebuf 65 blank
         linebuf 65 r@ read-line throw
-    while
-        ( lnum n )
-        drop ( width not needed )
-        linebuf over line move
+    while ( lnum n )
+        >r linebuf over line r> move
         1+
     repeat
     drop to nl
@@ -33,26 +34,33 @@ w columns / constant qw
     r> drop
 ;
 
+: xy ( row col -- x y )
+    over h / qw * +
+    swap h mod ;
+
 : redraw
     utime
     nl 0 do
-        i h / qw * i h mod at-xy
+        i 0 xy at-xy
         i lnum = if 100 else 18 then fg 
         i 1+ 3 .r normal space
-        i line type
+        i line LW type
     loop
     0 h at-xy
     utime 2swap d- d. lnum . .s
+    lnum cnum 4 + xy at-xy
 ;
 
 : go    0 max ml min to lnum ;
 : up    1 max lnum swap - go ; 
 : down  1 max lnum + go ; 
+: left  1 max cnum swap - 0 max to cnum ; 
+: right 1 max cnum + 63 min to cnum ; 
 
 : visual
     page 0
     begin
-        redraw
+        hide redraw cursor
         ekey ekey>char if ( c )
             dup '0' '9' 1+ within if
                 '0' - swap 10 * +
@@ -62,8 +70,8 @@ w columns / constant qw
                 'G'     of dup 0= nl and + 1- go endof
                 'k'     of up endof
                 'j'     of down endof
-                'q'     of exit endof
-                27      of exit endof
+                'q'     of page exit endof
+                27      of page exit endof
                         . abort
                 endcase 0
             then
