@@ -106,4 +106,4 @@ w columns / constant qw
     cr 256 232 do i .c loop
 ;
 
-s" vibe-2.1ans.fs" ld   visual
+s" 8080.fs" ld   visual
