@@ -16,8 +16,7 @@ create linebuf  65 allot
 
 form constant w 1- constant h
 w columns / constant qw
-0 value nl  0 value pos
-: lnum pos LW / ; : cnum pos LW mod ;
+0 value nl  variable pos 0 pos !
 : ml ( -- maxline ) nl 1- ;
 
 : ld  ( filename -- )
@@ -39,6 +38,9 @@ w columns / constant qw
     over h / qw * +
     swap h mod ;
 
+: lnum  pos @ LW / ;
+: cnum  pos @ LW mod ;
+
 : redraw
     utime
     nl 0 do
@@ -52,16 +54,10 @@ w columns / constant qw
     lnum cnum 4 + xy at-xy
 ;
 
-\ : go    0 max ml min LW * to lnum ;
-\ : up    1 max lnum swap - go ; 
-\ : down  1 max lnum + go ; 
-\ : left  1 max cnum swap - 0 max to cnum ; 
-\ : right 1 max cnum + 63 min to cnum ; 
-: go ;
-: up ;
-: down ;
-: left ;
-: go ;
+: safe  pos @ 0 max ml LW * min pos ! ;
+: go    0 max ml min LW * pos ! ;
+: down  1 max LW * pos +! safe ; 
+: up    1 max LW * negate pos +! safe ; 
 
 : visual
     page 0
@@ -110,4 +106,4 @@ w columns / constant qw
     cr 256 232 do i .c loop
 ;
 
-s" 8080.fs" ld   visual
+s" vibe-2.1ans.fs" ld   visual
