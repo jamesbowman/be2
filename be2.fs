@@ -738,4 +738,4 @@ variable clipboard-last
 : main   setup-blocks editor ;
 : reset-terminal   normal page ;
 : go   ['] main catch flush dup -28 = if reset-terminal bye else throw then ;
-go
+\ go

@@ -16,7 +16,8 @@ create linebuf  65 allot
 
 form constant w 1- constant h
 w columns / constant qw
-0 value nl  0 value lnum 0 value cnum
+0 value nl  0 value pos
+: lnum pos LW / ; : cnum pos LW mod ;
 : ml ( -- maxline ) nl 1- ;
 
 : ld  ( filename -- )
@@ -51,11 +52,16 @@ w columns / constant qw
     lnum cnum 4 + xy at-xy
 ;
 
-: go    0 max ml min to lnum ;
-: up    1 max lnum swap - go ; 
-: down  1 max lnum + go ; 
-: left  1 max cnum swap - 0 max to cnum ; 
-: right 1 max cnum + 63 min to cnum ; 
+\ : go    0 max ml min LW * to lnum ;
+\ : up    1 max lnum swap - go ; 
+\ : down  1 max lnum + go ; 
+\ : left  1 max cnum swap - 0 max to cnum ; 
+\ : right 1 max cnum + 63 min to cnum ; 
+: go ;
+: up ;
+: down ;
+: left ;
+: go ;
 
 : visual
     page 0

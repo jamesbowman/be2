@@ -164,3 +164,15 @@ e short
 
     cr 256 232 do i show loop
 ;
+
+: x
+    csi ." 1;999H"
+    csi ." 6n"
+    key drop key drop
+    begin
+        key dup [char] R <>
+    while
+        emit
+    repeat
+    drop
+;
