@@ -1,8 +1,11 @@
-4   constant columns
-64  constant LW
+\ ........................................................!....!
+3   constant columns
+80  constant LW
 
 create ff       256 LW * allot 
-: line  ( n -- a u )    LW * ff + ;
+: line  ( n -- a )    LW * ff + ;
+: line$ ( n -- a u )
+    line LW -trailing nip ;
 
 create linebuf  65 allot
 
@@ -13,13 +16,15 @@ create linebuf  65 allot
 : bg            csi ." 48;5;" n. ." m" ;
 : hide          csi ." ?25l" ;
 : cursor        csi ." ?25h" ;
+: el            csi ." K" ;
 
 form constant w 1- constant h
 w columns / constant qw
 0 value nl  variable pos 0 pos !
-: ml ( -- maxline ) nl 1- ;
+: $ nl 1- ;
 
-: ld  ( filename -- )
+: e
+    parse-name
     ff 256 LW * blank
     r/o open-file throw >r
     0
@@ -31,8 +36,7 @@ w columns / constant qw
     repeat
     drop to nl
     nl . ."  lines read" cr
-    r> drop
-;
+    r> drop ;
 
 : xy ( row col -- x y )
     over h / qw * +
@@ -40,70 +44,66 @@ w columns / constant qw
 
 : lnum  pos @ LW / ;
 : cnum  pos @ LW mod ;
+: rowcol pos @ LW /mod swap ;
 
 : redraw
-    utime
+    154 fg
     nl 0 do
         i 0 xy at-xy
-        i lnum = if 100 else 18 then fg 
-        i 1+ 3 .r normal space
         i line LW type
     loop
-    0 h at-xy
-    utime 2swap d- d. lnum . .s
-    lnum cnum 4 + xy at-xy
-;
+    lnum cnum xy at-xy ;
 
-: safe  pos @ 0 max ml LW * min pos ! ;
-: go    0 max ml min LW * pos ! ;
-: down  1 max LW * pos +! safe ; 
-: up    1 max LW * negate pos +! safe ; 
+: def   1 max ;
+
+\ an addr. is either a char or line address:
+\   p 0     char address p
+\   p 1     line address p
+
+: rel  pos @ + ;
+: >addr ( row col -- addr. )  swap LW * + 0 ;
+: mv ( n key -- addr. ) \ n key as a movement
+    case
+    'G'     of dup 0= nl and + 1- LW * 1 endof
+    'j'     of def LW * rel 1 endof
+    'k'     of def LW negate * rel 1 endof
+    9       of pos @ 4 + -4 and 0 endof
+    bl      of 1 rel 0 endof
+    'h'     of -1 rel 0 endof
+    'l'     of 1 rel 0 endof
+    '|'     of lnum swap >addr endof
+    '^'     of drop lnum 0 >addr endof
+    '$'     of drop lnum dup line$ dup 0> + >addr endof
+            . abort
+    endcase ;
+
+: go ( addr. -- )
+    drop
+    dup 0 $ LW * within
+    if pos ! else drop then ;
+
+: isnumber ( n key -- n key f )
+    over 0<> over '0' = and
+    over '1' '9' 1+ within or ;
 
 : visual
     page 0
     begin
         hide redraw cursor
-        ekey ekey>char if ( c )
-            dup '0' '9' 1+ within if
-                '0' - swap 10 * +
-            else
-                case
-                13      of down endof
-                'G'     of dup 0= nl and + 1- go endof
-                'k'     of up endof
-                'j'     of down endof
-                'q'     of page exit endof
-                27      of page exit endof
-                        . abort
-                endcase 0
-            then
-        else ekey>fkey if ( key-id )
+        key
+        isnumber if
+            '0' - swap 10 * +
+        else
             case
-            k-up    of up endof
-            k-down  of down endof
-                    drop
+            ':'     of 0 h 1- at-xy quit endof
+            'q'     of page exit endof
+            27      of page bye endof
+                    mv go 0
             endcase 0
-        else ( keyboard-event )
-        drop \ just ignore an unknown keyboard event type
-        then then
-    again
-;
+        then
+    again ;
 
-: .c
-    dup fg
-    4 u.r
-;
+: v visual ;
+: q bye ;
 
-: bars
-    cr 16 0 do i .c loop
-
-    216 0 do
-        i 36 mod 0= if cr then
-        i 6 mod 0= if cr then
-        i 16 + .c
-    loop
-
-    cr 256 232 do i .c loop
-;
-
-s" 8080.fs" ld   visual
+e te.fs v
