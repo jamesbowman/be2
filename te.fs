@@ -96,14 +96,20 @@ w columns / constant qw
         over isblank or
     until
     nip ;
+: backward-word ( a0 -- a1 )
+    begin 1- dup c@ bl <> until
+    begin 1- dup c@ bl = until 1+ ;
 : forward-word ( a0 -- a1 )
     begin dup c@ bl <> while 1+ repeat
     begin dup c@ bl =  while 1+ repeat ;
+: end-word
+    begin 1+ dup c@ bl <> until
+    begin 1+ dup c@ bl = until 1- ;
 : times ( n xt -- a1 )
     cur
     rot def 0 do
         over execute
-    loop nip ff - ;
+    loop nip ff - 0 ;
 : mv ( n key -- addr. ) \ n key as a movement
     case
     'G'     of dup 0= nl and + 1- lines 1 endof
@@ -115,6 +121,8 @@ w columns / constant qw
     bl      of 1 rel 0 endof
     'h'     of -1 rel 0 endof
     'l'     of 1 rel 0 endof
+    'b'     of ['] backward-word times endof
+    'e'     of ['] end-word times endof
     'w'     of ['] forward-word times endof
     '|'     of lnum swap >addr endof
     '0'     of drop lnum 0 >addr endof
@@ -170,7 +178,6 @@ w columns / constant qw
             case
             'd'     of drop loc d endof
             ':'     of 0 h 1- at-xy quit endof
-            'q'     of page exit endof
             '~'     of cur dup c@ isalpha $20 and
                        xor swap c! 1 rel 0 go endof
             27      of page bye endof
