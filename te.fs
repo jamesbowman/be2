@@ -3,7 +3,8 @@
 80  constant LW
 
 create ff       256 LW * allot
-: line  ( n -- a )      LW * ff + ;
+: lines ( u -- u )      LW * ;
+: line  ( n -- a )      lines ff + ;
 : line$ ( n -- u )      line LW -trailing ;
 : isblank ( n -- f )
     true swap
@@ -28,7 +29,7 @@ w columns / constant qw
 
 : e
     parse-name
-    ff 256 LW * blank
+    ff 256 lines blank
     r/o open-file throw >r
     0
     begin
@@ -76,7 +77,7 @@ w columns / constant qw
 
 : rel   pos @ + ;
 : col0  dup LW mod - ;
-: >addr ( row col -- addr. )  swap LW * + 0 ;
+: >addr ( row col -- addr. )  swap lines + 0 ;
 : backward-brace ( n -- line# )
     drop
     0 lnum
@@ -95,28 +96,38 @@ w columns / constant qw
         over isblank or
     until
     nip ;
+: forward-word ( a0 -- a1 )
+    begin dup c@ bl <> while 1+ repeat
+    begin dup c@ bl =  while 1+ repeat ;
+: times ( n xt -- a1 )
+    cur
+    rot def 0 do
+        over execute
+    loop nip ff - ;
 : mv ( n key -- addr. ) \ n key as a movement
     case
-    'G'     of dup 0= nl and + 1- LW * 1 endof
-    'j'     of def LW * rel 1 endof
+    'G'     of dup 0= nl and + 1- lines 1 endof
+    'M'     of drop h 3 2 */ lines 1 endof
+    'j'     of def lines rel 1 endof
     'k'     of def LW negate * rel 1 endof
     9       of pos @ 4 + -4 and 0 endof
-    13      of def LW * rel col0 1 endof
+    13      of def lines rel col0 1 endof
     bl      of 1 rel 0 endof
     'h'     of -1 rel 0 endof
     'l'     of 1 rel 0 endof
+    'w'     of ['] forward-word times endof
     '|'     of lnum swap >addr endof
     '0'     of drop lnum 0 >addr endof
     '^'     of drop lnum 0 >addr endof
     '$'     of drop lnum dup line$ nip dup 0> + >addr endof
-    '}'     of forward-brace LW * 1 endof
-    '{'     of backward-brace LW * 1 endof
+    '}'     of forward-brace lines 1 endof
+    '{'     of backward-brace lines 1 endof
             . abort
     endcase ;
 
 : go ( addr. -- )
     drop
-    dup 0 nl LW * within
+    dup 0 nl lines within
     if pos ! else drop then ;
 
 : between   1+ within ;
