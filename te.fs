@@ -1,16 +1,4 @@
-\ ........................................................!....!
 3   constant columns
-80  constant LW
-
-create ff       256 LW * allot
-: lines ( u -- u )      LW * ;
-: line  ( n -- a )      lines ff + ;
-: line$ ( n -- u )      line LW -trailing ;
-: isblank ( n -- f )
-    true swap
-    line LW bounds do i c@ bl = and loop ;
-
-create linebuf  65 allot
 
 : n. ( n -- )   base @ swap decimal 0 u.r base ! ;
 : csi           27 emit '[' emit ;
@@ -22,10 +10,20 @@ create linebuf  65 allot
 : el            csi ." K" ;
 
 form constant w 1- constant h
-w columns / constant qw
+w columns / constant LW
 0 value nl  variable pos 0 pos !
+
+create ff       256 LW * allot
+: lines ( u -- u )      LW * ;
+: line  ( n -- a )      lines ff + ;
+: line$ ( n -- u )      line LW -trailing ;
+: isblank ( n -- f )
+    true swap
+    line LW bounds do i c@ bl = and loop ;
 : cur                   ff pos @ + ;
 : $ nl 1- ;
+
+create linebuf  LW allot
 
 : e
     parse-name
@@ -33,7 +31,7 @@ w columns / constant qw
     r/o open-file throw >r
     0
     begin
-        linebuf 65 r@ read-line throw
+        linebuf LW r@ read-line throw
     while ( lnum n )
         >r linebuf over line r> move
         1+
@@ -54,7 +52,7 @@ w columns / constant qw
     r> drop 2drop ;
 
 : xy ( row col -- x y )
-    over h / qw * +
+    over h / LW * +
     swap h mod ;
 
 : lnum  pos @ LW / ;
@@ -62,7 +60,7 @@ w columns / constant qw
 : rowcol pos @ LW /mod swap ;
 
 : redraw
-    154 fg
+    255 fg
     nl 0 do
         i 0 xy at-xy
         i line LW type
@@ -116,7 +114,6 @@ w columns / constant qw
     'M'     of drop h 3 2 */ lines 1 endof
     'j'     of def lines rel 1 endof
     'k'     of def LW negate * rel 1 endof
-    9       of pos @ 4 + -4 and 0 endof
     13      of def lines rel col0 1 endof
     bl      of 1 rel 0 endof
     'h'     of -1 rel 0 endof
